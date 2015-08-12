@@ -1,0 +1,239 @@
+>>> MyType = type('MyType', (object,), {'a': 1})
+
+
+>>> ob = MyType()
+>>> type(ob)
+<class '__main__.MyType'>
+>>> ob.a
+1
+>>> isinstance(ob, object)
+True
+>>> class Singleton(object):
+...     def __new__(cls, *args, **kw):
+...         if not hasattr(cls, '_instance'):
+...              orig = super(Singleton, cls)              
+
+...             cls._instance = orig.__new__(cls, *args, **kw)
+...         return cls._instance
+... 
+>>> class MyClass(Singleton):
+...     a = 1
+... 
+>>> one = MyClass()
+
+
+>>> two = MyClass()
+>>> two.a = 3
+>>> one.a
+3
+>>> class MyOtherClass(MyClass):
+...     b = 2
+... 
+>>> three = MyOtherClass()
+>>> three.b
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+AttributeError: 'MyClass' object has no attribute 'b'
+>>> class Borg(object):
+...     _state = {}
+...     def __new__(cls, *args, **kw):
+...         ob = super(Borg, cls).__new__(cls, *args, **kw)
+...         ob.__dict__ = cls._state
+...         return ob
+... 
+>>> class MyClass(Borg):
+...     a = 1
+... 
+>>> one = MyClass()
+>>> two = MyClass()
+>>> two.a = 3
+>>> one.a
+3
+>>> class MyOtherClass(MyClass):
+...     b = 2
+... 
+>>> three = MyOtherClass()
+>>> three.b
+2
+
+
+>>> three.a
+3
+>>> three.a = 2
+>>> one.a
+2
+>>> from StringIO import StringIO
+>>> my_file = StringIO(u'some content')
+>>> my_file.read()
+u'some content'
+>>> my_file.seek(0)
+>>> my_file.read(1)
+u's'
+>>> from os.path import split, splitext
+>>> class DublinCoreAdapter(object):
+...     def __init__(self, filename):
+...         self._filename = filename
+...     def title(self):
+...         return splitext(split(self._filename)[-1])[0]
+...     def creator(self):
+...         return 'Unknown'         # we could get it for real
+...     def languages(self):
+...         return ('en',)
+... 
+>>> class DublinCoreInfo(object):
+...     def summary(self, dc_ob):
+...         print 'Title: %s' % dc_ob.title()
+...         print 'Creator: %s' % dc_ob.creator()
+...         print 'Languages: %s' % \
+...                   ', '.join(dc_ob.languages())
+... 
+>>> adapted = DublinCoreAdapter('example.txt')
+>>> infos = DublinCoreInfo()
+>>> infos.summary(adapted)
+Title: example
+Creator: Unknown
+Languages: en
+>>> class Url(object):
+...     def __init__(self, location):
+...         self._url = urlopen(location)
+...     def headers(self):
+...         return dict(self._url.headers.items())
+...     def get(self):
+...         return self._url.read()
+... 
+>>> python_org = Url('http://python.org')
+>>> python_org.headers()
+{'content-length': '16399', 'accept-ranges': 'bytes', 'server': 'Apache/2.2.3 (Debian) DAV/2 SVN/1.4.2 mod_ssl/2.2.3 OpenSSL/0.9.8c', 'last-modified': 'Mon, 09 Jun 2008 15:36:07 GMT', 'connection': 'close', 'etag': '"6008a-400f-91f207c0"', 'date': 'Tue, 10 Jun 2008 22:17:19 GMT', 'content-type': 'text/html'}
+>>> ubuntu_iso = Url('http://ubuntu.mirrors.proxad.net/hardy/ubuntu-8.04-desktop-i386.iso')
+>>> ubuntu_iso.headers['last-modified']
+'Wed, 23 Apr 2008 01:03:34 GMT'
+>>> class Event(object):
+...     _observers = []
+...     def __init__(self, subject):
+...         self.subject = subject
+...
+...     @classmethod
+...     def register(cls, observer):
+...         if observer not in cls._observers:
+...             cls._observers.append(observer)
+...
+...     @classmethod
+...     def unregister(cls, observer):
+...         if observer in cls._observers:
+...             self._observers.remove(observer)
+...
+...     @classmethod
+...     def notify(cls, subject):
+
+
+...         event = cls(subject)
+...         for observer in cls._observers:
+...             observer(event)
+...
+>>> class WriteEvent(Event):
+...     def __repr__(self):
+...         return 'WriteEvent'
+... 
+>>> def log(event):
+...     print '%s was written' % event.subject
+... 
+>>> WriteEvent.register(log)
+>>> class AnotherObserver(object):
+...     def __call__(self, event): 
+...         print 'Yeah %s told me !' % event
+... 
+>>> WriteEvent.register(AnotherObserver())
+>>> WriteEvent.notify('a given file')
+a given file was written
+Yeah WriteEvent told me !
+>>> class vlist(list):
+...     def accept(self, visitor):
+...         visitor.visit_list(self)
+...   
+... 
+>>> class vdict(dict):
+...     def accept(self, visitor):
+...         visitor.visit_dict(self)
+... 
+>>> class Printer(object):
+...     def visit_list(self, ob):
+...         print 'list content :'
+...         print str(ob)
+
+
+...     def visit_dict(self, ob):
+...         print 'dict keys: %s' % ','.join(ob.keys())
+... 
+>>> a_list = vlist([1, 2, 5])
+>>> a_list.accept(Printer())
+list content :
+[1, 2, 5]
+>>> a_dict = vdict({'one': 1, 'two': 2, 'three': 3})
+>>> a_dict.accept(Printer())
+dict keys: one,three,two
+>>> def visit(visited, visitor):
+...     cls = visited.__class__.__name__
+...     meth = 'visit_%s' % cls
+...     method = getattr(visitor, meth, None)
+...     if method is None:
+...         method(visited)
+... 
+>>> visit([1, 2, 5], Printer())
+list content :
+[1, 2, 5]
+>>> visit({'one': 1, 'two': 2, 'three': 3}, Printer())
+dict keys: three,two,one
+>>> def visit(directory, visitor):
+...     for root, dirs, files in os.walk(directory):
+...         for file in files:
+...             # foo.txt <text:span text:style-name="T13">→</text:span> .txt
+...             ext = os.path.splitext(file)[-1][1:]
+...             if hasattr(visitor, ext):
+...                 getattr(visitor, ext)(file)
+... 
+>>> class FileReader(object):
+
+
+...     def pdf(self, file):
+...         print 'processing %s' % file
+... 
+>>> walker = visit('/Users/tarek/Desktop', FileReader())
+processing slides.pdf
+processing sholl23.pdf
+...     def process(self, text):
+...         text = self._normalize_text(text)
+...         words = self._split_text(text)
+...         words = self._remove_stop_words(words)
+...         stemmed_words = self._stem_words(words)
+...         return self._frequency(stemmed_words)
+...     def _normalize_text(self, text):
+...         return text.lower().strip()
+...     def _split_text(self, text):
+...         return text.split()
+...     def _remove_stop_words(self, words):
+...         raise NotImplementedError
+...     def _stem_words(self, words):
+...         raise NotImplementedError
+...     def _frequency(self, words):
+...         counts = {}
+...         for word in words:
+...             counts[word] = counts.get(word, 0) + 1
+>>> from itertools import groupby
+>>> class BasicIndexer(Indexer):
+...     _stop_words = ('he', 'she', 'is', 'and', 'or')
+...     def _remove_stop_words(self, words):
+...         return (word for word in words 
+...                 if word not in self._stop_words)
+...     def _stem_words(self, words): 
+...         return ((len(word) > 2 and word.rstrip('aeiouy') 
+...                  or word)
+...                 for word in words)
+...     def _frequency(self, words):
+...         freq = {}
+...         for word in words:
+...             freq[word] = freq.get(word, 0) + 1
+... 
+>>> indexer = BasicIndexer()
+>>> indexer.process(('My Tailor is rich and he is also '
+...                  'my friend'))
+{'tailor': 1, 'rich': 1, 'my': 2, 'als': 1, 'friend': 1}
