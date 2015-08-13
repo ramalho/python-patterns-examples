@@ -1,0 +1,18 @@
+FSMName Turnstyle
+Context TurnstyleActions
+Initial Locked
+Exception FSMError
+{
+    Locked
+    {
+        coin    Unlocked    unlock
+        pass    Locked      alarm
+    }
+    Unlocked
+    {
+        coin    Unlocked    thankyou
+        pass    Locked      lock
+    }
+}
+
+

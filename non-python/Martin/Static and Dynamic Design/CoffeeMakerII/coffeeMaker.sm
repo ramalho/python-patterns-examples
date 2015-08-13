@@ -1,0 +1,29 @@
+FSMName CoffeeMakerFSM
+Context CoffeeMaker
+Initial Idle
+Version 14 Jun 99 rcm
+FSMGenerator smc.generator.cpp.SMCppGenerator
+Pragma Header coffeeMaker.h
+Pragma Namespace com_cmindustries_coffeeMakerFSM
+{
+  Idle
+  {
+    Start     Brewing       {HwsStart VessStart}
+  }
+    
+  Brewing       
+  {
+    NotReady  BrewingPaused {HwsPause}
+    Done      Brewed        {UiDone HwsDone VessDone}
+  }
+
+  BrewingPaused 
+  {
+    Ready     Brewing       {HwsResume}
+  }
+
+  Brewed        
+  {
+    Complete  Idle          {UiComplete HwsComplete VessComplete}
+  }
+}
