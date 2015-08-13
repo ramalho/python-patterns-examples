@@ -16,6 +16,7 @@
 
 from urllib.request import urlopen
 
+
 class Url(object):
 
     def __init__(self, location):
