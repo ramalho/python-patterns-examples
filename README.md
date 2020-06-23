@@ -1,2 +1,2 @@
 # python-patterns-examples
-A collection of Design Patters imlemented in Python
+A collection of Design Patterns implemented in Python
